@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Webhook API
+  description: Standard Webhooks compatible API
+  version: 1.0.0
+
+paths:
+  /webhook:
+    post:
+      operationId: receiveWebhook
+      summary: Receive a webhook event
+      description: Endpoint to receive webhook events with standard-webhooks signature verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Webhook received successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    WebhookEvent:
+      type: object
+      required:
+        - type
+        - data
+      properties:
+        type:
+          type: string
+          description: The type of the webhook event
+          example: "user.created"
+        data:
+          type: object
+          additionalProperties: true
+          description: The event payload data
+
+    WebhookResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
