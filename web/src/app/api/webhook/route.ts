@@ -27,13 +27,17 @@ export async function POST(request: NextRequest) {
     // Verify the webhook signature and parse as JSON
     const payload = wh.verify(body, headers) as Record<string, unknown>;
 
-    // Store the entire payload
+    // Store the event with headers
     const event = addEvent({
-      id: headers["webhook-id"],
+      headers: {
+        id: headers["webhook-id"],
+        timestamp: headers["webhook-timestamp"],
+        signature: headers["webhook-signature"],
+      },
       payload,
     });
 
-    console.log(`Received webhook: id=${event.id}, payload=${JSON.stringify(payload)}`);
+    console.log(`Received webhook: id=${event.headers.id}, payload=${JSON.stringify(payload)}`);
 
     return NextResponse.json({
       success: true,

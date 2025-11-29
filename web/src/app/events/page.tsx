@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-interface WebhookEvent {
+interface WebhookHeaders {
   id: string;
+  timestamp: string;
+  signature: string;
+}
+
+interface WebhookEvent {
+  headers: WebhookHeaders;
   payload: Record<string, unknown>;
   receivedAt: string;
 }
@@ -82,20 +88,30 @@ export default function EventsPage() {
           <div className="space-y-4">
             {events.map((event) => (
               <div
-                key={`${event.id}-${event.receivedAt}`}
+                key={`${event.headers.id}-${event.receivedAt}`}
                 className="bg-white rounded-lg shadow p-4"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-sm font-mono text-gray-600">
-                    {event.id}
-                  </span>
+                <div className="flex justify-between items-start mb-3">
                   <span className="text-sm text-gray-500">
                     {new Date(event.receivedAt).toLocaleString()}
                   </span>
                 </div>
-                <pre className="bg-gray-50 p-3 rounded text-sm overflow-x-auto">
-                  {JSON.stringify(event.payload, null, 2)}
-                </pre>
+
+                <div className="mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Headers</h3>
+                  <div className="bg-gray-50 p-3 rounded text-sm font-mono space-y-1">
+                    <div><span className="text-gray-500">webhook-id:</span> {event.headers.id}</div>
+                    <div><span className="text-gray-500">webhook-timestamp:</span> {event.headers.timestamp}</div>
+                    <div className="break-all"><span className="text-gray-500">webhook-signature:</span> {event.headers.signature}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Payload</h3>
+                  <pre className="bg-gray-50 p-3 rounded text-sm overflow-x-auto">
+                    {JSON.stringify(event.payload, null, 2)}
+                  </pre>
+                </div>
               </div>
             ))}
           </div>

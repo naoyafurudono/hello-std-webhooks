@@ -1,5 +1,11 @@
-export interface WebhookEvent {
+export interface WebhookHeaders {
   id: string;
+  timestamp: string;
+  signature: string;
+}
+
+export interface WebhookEvent {
+  headers: WebhookHeaders;
   payload: Record<string, unknown>;
   receivedAt: string;
 }
