@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ogen-go/ogen/main/ogen_config_schema.json
+generator:
+  features:
+    enable:
+      - paths/client
+      - paths/server
+      - ogen/otel

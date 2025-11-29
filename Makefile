@@ -2,7 +2,7 @@
 
 # Generate ogen code from OpenAPI schema
 generate:
-	go tool ogen --target api --package api --clean api/openapi.yaml
+	go tool ogen --config api/ogen.yaml --target api --package api --clean api/openapi.yaml
 
 # Build all binaries
 build:
