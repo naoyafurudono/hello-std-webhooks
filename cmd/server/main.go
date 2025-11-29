@@ -5,11 +5,16 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 	"github.com/naoyafurudono/hello-std-webhooks/server"
 )
 
 func main() {
+	// Load env.local if it exists (ignore error if not found)
+	_ = godotenv.Load("env.local")
+
 	// Get the webhook secret from environment variable
 	secret := os.Getenv("WEBHOOK_SECRET")
 	if secret == "" {

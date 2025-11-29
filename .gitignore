@@ -1,1 +1,5 @@
 bin/
+
+# Local environment files (contain secrets)
+env.local
+cmd/server/env.local

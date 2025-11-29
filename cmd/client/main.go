@@ -10,12 +10,16 @@ import (
 
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 	"github.com/naoyafurudono/hello-std-webhooks/client"
 )
 
 func main() {
+	// Load env.local if it exists (ignore error if not found)
+	_ = godotenv.Load("env.local")
+
 	var targetName string
 	flag.StringVar(&targetName, "target", "", "target name (e.g., GO, NEXTJS) - reads WEBHOOK_TARGET_<NAME>_URL and WEBHOOK_TARGET_<NAME>_SECRET")
 	flag.Parse()
