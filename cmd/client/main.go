@@ -83,19 +83,9 @@ func getTargetConfig(targetName string) (url, secret string) {
 		return url, secret
 	}
 
-	// Fallback to legacy env vars for backwards compatibility
-	url = os.Getenv("WEBHOOK_TARGET_URL")
-	if url == "" {
-		url = "http://localhost:8080/webhook"
-	}
-
-	secret = os.Getenv("WEBHOOK_SECRET")
-	if secret == "" {
-		// Default secret for development
-		secret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
-	}
-
-	return url, secret
+	// No target specified - require explicit target name
+	log.Fatal("target is required. Use -target=go or -target=nextjs. Run 'make setup-env' first.")
+	return "", "" // unreachable
 }
 
 func mustEncodeJSON(v string) jx.Raw {

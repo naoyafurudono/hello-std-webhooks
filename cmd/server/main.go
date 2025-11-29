@@ -18,9 +18,7 @@ func main() {
 	// Get the webhook secret from environment variable
 	secret := os.Getenv("WEBHOOK_SECRET")
 	if secret == "" {
-		// Default secret for development (base64 encoded)
-		// In production, always use a secure secret from environment
-		secret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+		log.Fatal("WEBHOOK_SECRET is not set. Run 'make setup-env' to generate env.local files.")
 	}
 
 	addr := os.Getenv("SERVER_ADDR")
