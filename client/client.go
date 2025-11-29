@@ -14,15 +14,15 @@ import (
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 )
 
-// WebhookClient wraps the ogen-generated client with standard-webhooks signing.
+// WebhookClient wraps the ogen-generated WebhookClient with standard-webhooks signing.
 type WebhookClient struct {
-	client *api.Client
-	wh     *standardwebhooks.Webhook
+	client    *api.WebhookClient
+	targetURL string
 }
 
 // NewWebhookClient creates a new webhook client with signature signing capability.
 // The secret should be a base64-encoded secret key.
-func NewWebhookClient(serverURL string, secret string) (*WebhookClient, error) {
+func NewWebhookClient(targetURL string, secret string) (*WebhookClient, error) {
 	wh, err := standardwebhooks.NewWebhook(secret)
 	if err != nil {
 		return nil, err
@@ -35,20 +35,20 @@ func NewWebhookClient(serverURL string, secret string) (*WebhookClient, error) {
 	}
 	httpClient := &http.Client{Transport: transport}
 
-	client, err := api.NewClient(serverURL, api.WithClient(httpClient))
+	client, err := api.NewWebhookClient(api.WithClient(httpClient))
 	if err != nil {
 		return nil, err
 	}
 
 	return &WebhookClient{
-		client: client,
-		wh:     wh,
+		client:    client,
+		targetURL: targetURL,
 	}, nil
 }
 
 // SendWebhook sends a webhook event with proper standard-webhooks headers.
-func (c *WebhookClient) SendWebhook(ctx context.Context, event *api.WebhookEvent) (api.ReceiveWebhookRes, error) {
-	return c.client.ReceiveWebhook(ctx, event)
+func (c *WebhookClient) SendWebhook(ctx context.Context, event *api.WebhookEvent) (api.UserEventRes, error) {
+	return c.client.UserEvent(ctx, c.targetURL, event)
 }
 
 // signingTransport adds standard-webhooks headers to outgoing requests.
@@ -58,8 +58,8 @@ type signingTransport struct {
 }
 
 func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Only sign webhook requests
-	if req.URL.Path == "/webhook" && req.Method == http.MethodPost {
+	// Sign all POST requests (webhooks)
+	if req.Method == http.MethodPost {
 		// Read the body
 		var body []byte
 		if req.Body != nil {

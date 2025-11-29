@@ -20,13 +20,13 @@ func main() {
 		secret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
 	}
 
-	serverURL := os.Getenv("WEBHOOK_SERVER_URL")
-	if serverURL == "" {
-		serverURL = "http://localhost:8080"
+	targetURL := os.Getenv("WEBHOOK_TARGET_URL")
+	if targetURL == "" {
+		targetURL = "http://localhost:8080/webhook"
 	}
 
 	// Create the webhook client
-	wc, err := client.NewWebhookClient(serverURL, secret)
+	wc, err := client.NewWebhookClient(targetURL, secret)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
@@ -52,9 +52,9 @@ func main() {
 	switch r := res.(type) {
 	case *api.WebhookResponse:
 		log.Printf("Webhook sent successfully: success=%v, message=%s", r.Success, r.Message)
-	case *api.ReceiveWebhookBadRequest:
+	case *api.UserEventBadRequest:
 		log.Printf("Bad request: %s", r.Error)
-	case *api.ReceiveWebhookUnauthorized:
+	case *api.UserEventUnauthorized:
 		log.Printf("Unauthorized: %s", r.Error)
 	default:
 		log.Printf("Unknown response type: %T", r)

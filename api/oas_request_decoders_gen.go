@@ -14,7 +14,7 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func (s *Server) decodeReceiveWebhookRequest(r *http.Request) (
+func (s *WebhookServer) decodeUserEventRequest(r *http.Request) (
 	req *WebhookEvent,
 	rawBody []byte,
 	close func() error,

@@ -8,7 +8,7 @@ import (
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 )
 
-// WebhookHandler implements api.Handler for processing webhook events.
+// WebhookHandler implements api.WebhookHandler for processing webhook events.
 type WebhookHandler struct{}
 
 // NewWebhookHandler creates a new WebhookHandler.
@@ -16,9 +16,9 @@ func NewWebhookHandler() *WebhookHandler {
 	return &WebhookHandler{}
 }
 
-// ReceiveWebhook handles incoming webhook events.
+// UserEvent handles incoming user event webhooks.
 // Note: Signature verification is done in the middleware before this handler is called.
-func (h *WebhookHandler) ReceiveWebhook(ctx context.Context, req *api.WebhookEvent) (api.ReceiveWebhookRes, error) {
+func (h *WebhookHandler) UserEvent(ctx context.Context, req *api.WebhookEvent) (api.UserEventRes, error) {
 	log.Printf("Received webhook event: type=%s", req.Type)
 
 	// Process the webhook event based on type

@@ -107,17 +107,17 @@ func (s *ErrorResponse) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes ReceiveWebhookBadRequest as json.
-func (s *ReceiveWebhookBadRequest) Encode(e *jx.Encoder) {
+// Encode encodes UserEventBadRequest as json.
+func (s *UserEventBadRequest) Encode(e *jx.Encoder) {
 	unwrapped := (*ErrorResponse)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes ReceiveWebhookBadRequest from json.
-func (s *ReceiveWebhookBadRequest) Decode(d *jx.Decoder) error {
+// Decode decodes UserEventBadRequest from json.
+func (s *UserEventBadRequest) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode ReceiveWebhookBadRequest to nil")
+		return errors.New("invalid: unable to decode UserEventBadRequest to nil")
 	}
 	var unwrapped ErrorResponse
 	if err := func() error {
@@ -128,34 +128,34 @@ func (s *ReceiveWebhookBadRequest) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = ReceiveWebhookBadRequest(unwrapped)
+	*s = UserEventBadRequest(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *ReceiveWebhookBadRequest) MarshalJSON() ([]byte, error) {
+func (s *UserEventBadRequest) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *ReceiveWebhookBadRequest) UnmarshalJSON(data []byte) error {
+func (s *UserEventBadRequest) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
 
-// Encode encodes ReceiveWebhookUnauthorized as json.
-func (s *ReceiveWebhookUnauthorized) Encode(e *jx.Encoder) {
+// Encode encodes UserEventUnauthorized as json.
+func (s *UserEventUnauthorized) Encode(e *jx.Encoder) {
 	unwrapped := (*ErrorResponse)(s)
 
 	unwrapped.Encode(e)
 }
 
-// Decode decodes ReceiveWebhookUnauthorized from json.
-func (s *ReceiveWebhookUnauthorized) Decode(d *jx.Decoder) error {
+// Decode decodes UserEventUnauthorized from json.
+func (s *UserEventUnauthorized) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode ReceiveWebhookUnauthorized to nil")
+		return errors.New("invalid: unable to decode UserEventUnauthorized to nil")
 	}
 	var unwrapped ErrorResponse
 	if err := func() error {
@@ -166,19 +166,19 @@ func (s *ReceiveWebhookUnauthorized) Decode(d *jx.Decoder) error {
 	}(); err != nil {
 		return errors.Wrap(err, "alias")
 	}
-	*s = ReceiveWebhookUnauthorized(unwrapped)
+	*s = UserEventUnauthorized(unwrapped)
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *ReceiveWebhookUnauthorized) MarshalJSON() ([]byte, error) {
+func (s *UserEventUnauthorized) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *ReceiveWebhookUnauthorized) UnmarshalJSON(data []byte) error {
+func (s *UserEventUnauthorized) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

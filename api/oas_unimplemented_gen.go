@@ -11,13 +11,11 @@ import (
 // UnimplementedHandler is no-op Handler which returns http.ErrNotImplemented.
 type UnimplementedHandler struct{}
 
-var _ Handler = UnimplementedHandler{}
+var _ WebhookHandler = UnimplementedHandler{}
 
-// ReceiveWebhook implements receiveWebhook operation.
+// UserEvent implements userEvent operation.
 //
-// Endpoint to receive webhook events with standard-webhooks signature verification.
-//
-// POST /webhook
-func (UnimplementedHandler) ReceiveWebhook(ctx context.Context, req *WebhookEvent) (r ReceiveWebhookRes, _ error) {
+// Webhook sent when a user event occurs (created, updated, deleted).
+func (UnimplementedHandler) UserEvent(ctx context.Context, req *WebhookEvent) (r UserEventRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

@@ -29,8 +29,8 @@ func NewWebhookVerificationMiddleware(secret string, next http.Handler) (*Webhoo
 
 // ServeHTTP implements http.Handler.
 func (m *WebhookVerificationMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Only verify POST requests to /webhook
-	if r.Method == http.MethodPost && r.URL.Path == "/webhook" {
+	// Verify all POST requests (webhooks)
+	if r.Method == http.MethodPost {
 		// Read the body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {

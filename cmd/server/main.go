@@ -23,23 +23,28 @@ func main() {
 		addr = ":8080"
 	}
 
-	// Create the handler
+	// Create the webhook handler
 	handler := server.NewWebhookHandler()
 
-	// Create the ogen server
-	srv, err := api.NewServer(handler)
+	// Create the ogen webhook server
+	srv, err := api.NewWebhookServer(handler)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
 
-	// Wrap with signature verification middleware
-	middleware, err := server.NewWebhookVerificationMiddleware(secret, srv)
+	// Get the handler for "userEvent" webhook and wrap with signature verification
+	webhookHandler := srv.Handler("userEvent")
+	middleware, err := server.NewWebhookVerificationMiddleware(secret, webhookHandler)
 	if err != nil {
 		log.Fatalf("Failed to create middleware: %v", err)
 	}
 
+	// Mount at /webhook path
+	mux := http.NewServeMux()
+	mux.Handle("/webhook", middleware)
+
 	log.Printf("Starting webhook server on %s", addr)
-	if err := http.ListenAndServe(addr, middleware); err != nil {
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }

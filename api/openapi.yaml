@@ -1,16 +1,16 @@
-# yaml-language-server: $schema=https://spec.openapis.org/oas/3.0/schema/2021-09-28
-openapi: 3.0.3
+# yaml-language-server: $schema=https://spec.openapis.org/oas/3.1/schema/2022-10-07
+openapi: 3.1.0
 info:
   title: Webhook API
   description: Standard Webhooks compatible API
   version: 1.0.0
 
-paths:
-  /webhook:
+webhooks:
+  userEvent:
     post:
-      operationId: receiveWebhook
-      summary: Receive a webhook event
-      description: Endpoint to receive webhook events with standard-webhooks signature verification
+      operationId: userEvent
+      summary: User event webhook
+      description: Webhook sent when a user event occurs (created, updated, deleted)
       requestBody:
         required: true
         content:

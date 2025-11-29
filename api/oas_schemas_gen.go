@@ -22,13 +22,13 @@ func (s *ErrorResponse) SetError(val string) {
 	s.Error = val
 }
 
-type ReceiveWebhookBadRequest ErrorResponse
+type UserEventBadRequest ErrorResponse
 
-func (*ReceiveWebhookBadRequest) receiveWebhookRes() {}
+func (*UserEventBadRequest) userEventRes() {}
 
-type ReceiveWebhookUnauthorized ErrorResponse
+type UserEventUnauthorized ErrorResponse
 
-func (*ReceiveWebhookUnauthorized) receiveWebhookRes() {}
+func (*UserEventUnauthorized) userEventRes() {}
 
 // Ref: #/components/schemas/WebhookEvent
 type WebhookEvent struct {
@@ -96,4 +96,4 @@ func (s *WebhookResponse) SetMessage(val string) {
 	s.Message = val
 }
 
-func (*WebhookResponse) receiveWebhookRes() {}
+func (*WebhookResponse) userEventRes() {}

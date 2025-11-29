@@ -11,11 +11,9 @@ import (
 	"github.com/go-faster/errors"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/otelogen"
-	"github.com/ogen-go/ogen/uri"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -26,12 +24,6 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
-	// ReceiveWebhook invokes receiveWebhook operation.
-	//
-	// Endpoint to receive webhook events with standard-webhooks signature verification.
-	//
-	// POST /webhook
-	ReceiveWebhook(ctx context.Context, request *WebhookEvent) (ReceiveWebhookRes, error)
 }
 
 // Client implements OAS client.
@@ -77,21 +69,34 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 	return u
 }
 
-// ReceiveWebhook invokes receiveWebhook operation.
+// WebhookClient implements webhook client.
+type WebhookClient struct {
+	baseClient
+}
+
+// NewWebhookClient initializes new WebhookClient.
+func NewWebhookClient(opts ...ClientOption) (*WebhookClient, error) {
+	c, err := newClientConfig(opts...).baseClient()
+	if err != nil {
+		return nil, err
+	}
+	return &WebhookClient{
+		baseClient: c,
+	}, nil
+}
+
+// UserEvent invokes userEvent operation.
 //
-// Endpoint to receive webhook events with standard-webhooks signature verification.
-//
-// POST /webhook
-func (c *Client) ReceiveWebhook(ctx context.Context, request *WebhookEvent) (ReceiveWebhookRes, error) {
-	res, err := c.sendReceiveWebhook(ctx, request)
+// Webhook sent when a user event occurs (created, updated, deleted).
+func (c *WebhookClient) UserEvent(ctx context.Context, targetURL string, request *WebhookEvent) (UserEventRes, error) {
+	res, err := c.sendUserEvent(ctx, targetURL, request)
 	return res, err
 }
 
-func (c *Client) sendReceiveWebhook(ctx context.Context, request *WebhookEvent) (res ReceiveWebhookRes, err error) {
+func (c *WebhookClient) sendUserEvent(ctx context.Context, targetURL string, request *WebhookEvent) (res UserEventRes, err error) {
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("receiveWebhook"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/webhook"),
+		otelogen.OperationID("userEvent"),
+		otelogen.WebhookName("userEvent"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -107,7 +112,7 @@ func (c *Client) sendReceiveWebhook(ctx context.Context, request *WebhookEvent) 
 	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
 
 	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ReceiveWebhookOperation,
+	ctx, span := c.cfg.Tracer.Start(ctx, UserEventOperation,
 		trace.WithAttributes(otelAttrs...),
 		clientSpanKind,
 	)
@@ -123,17 +128,18 @@ func (c *Client) sendReceiveWebhook(ctx context.Context, request *WebhookEvent) 
 	}()
 
 	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/webhook"
-	uri.AddPathParts(u, pathParts[:]...)
+	u, err := url.Parse(targetURL)
+	if err != nil {
+		return res, errors.Wrap(err, "parse target URL")
+	}
+	trimTrailingSlashes(u)
 
 	stage = "EncodeRequest"
 	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
 	}
-	if err := encodeReceiveWebhookRequest(request, r); err != nil {
+	if err := encodeUserEventRequest(request, r); err != nil {
 		return res, errors.Wrap(err, "encode request")
 	}
 
@@ -145,7 +151,7 @@ func (c *Client) sendReceiveWebhook(ctx context.Context, request *WebhookEvent) 
 	defer resp.Body.Close()
 
 	stage = "DecodeResponse"
-	result, err := decodeReceiveWebhookResponse(resp)
+	result, err := decodeUserEventResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
