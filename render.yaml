@@ -6,6 +6,8 @@ services:
     rootDir: web
     buildCommand: npm install && npm run build
     startCommand: npm start
+    customDomains:
+      - app.nfurudono.com
     envVars:
       - key: WEBHOOK_SECRET
         sync: false  # Set manually in Render dashboard
