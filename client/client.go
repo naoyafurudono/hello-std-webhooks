@@ -8,11 +8,24 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 )
+
+type webhookIDKey struct{}
+
+// WithWebhookID sets the webhook message ID in the context.
+// The message ID should be unique per event and remain the same across retries.
+// This is used as an idempotency key by consumers.
+func WithWebhookID(ctx context.Context, msgID string) context.Context {
+	return context.WithValue(ctx, webhookIDKey{}, msgID)
+}
+
+func getWebhookID(ctx context.Context) (string, bool) {
+	msgID, ok := ctx.Value(webhookIDKey{}).(string)
+	return msgID, ok
+}
 
 // WebhookClient wraps the ogen-generated WebhookClient with standard-webhooks signing.
 type WebhookClient struct {
@@ -47,6 +60,8 @@ func NewWebhookClient(targetURL string, secret string) (*WebhookClient, error) {
 }
 
 // SendWebhook sends a webhook event with proper standard-webhooks headers.
+// The context must contain a webhook ID set via WithWebhookID.
+// The same ID should be used for retries of the same event.
 func (c *WebhookClient) SendWebhook(ctx context.Context, event *api.WebhookEvent) (api.UserEventRes, error) {
 	return c.client.UserEvent(ctx, c.targetURL, event)
 }
@@ -60,6 +75,12 @@ type signingTransport struct {
 func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Sign all POST requests (webhooks)
 	if req.Method == http.MethodPost {
+		// Get webhook ID from context
+		msgID, ok := getWebhookID(req.Context())
+		if !ok {
+			return nil, ErrMissingWebhookID
+		}
+
 		// Read the body
 		var body []byte
 		if req.Body != nil {
@@ -72,8 +93,6 @@ func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 			req.Body = io.NopCloser(bytes.NewReader(body))
 		}
 
-		// Generate webhook ID and timestamp
-		msgID := generateMsgID()
 		timestamp := time.Now()
 
 		// Sign the payload
@@ -89,11 +108,6 @@ func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 
 	return t.base.RoundTrip(req)
-}
-
-// generateMsgID generates a unique message ID for the webhook.
-func generateMsgID() string {
-	return "msg_" + uuid.New().String()
 }
 
 // formatTimestamp formats the timestamp as a Unix timestamp string.

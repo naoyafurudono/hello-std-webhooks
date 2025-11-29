@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -55,7 +56,8 @@ func TestIntegration_ValidSignature(t *testing.T) {
 		},
 	}
 
-	res, err := wc.SendWebhook(context.Background(), event)
+	ctx := client.WithWebhookID(context.Background(), "msg_test_valid_signature")
+	res, err := wc.SendWebhook(ctx, event)
 	if err != nil {
 		t.Fatalf("failed to send webhook: %v", err)
 	}
@@ -70,6 +72,32 @@ func TestIntegration_ValidSignature(t *testing.T) {
 	}
 	if resp.Message != "Webhook event 'user.created' processed successfully" {
 		t.Errorf("unexpected message: %s", resp.Message)
+	}
+}
+
+func TestIntegration_MissingWebhookID(t *testing.T) {
+	ts := setupTestServer(t)
+	defer ts.Close()
+
+	wc, err := client.NewWebhookClient(ts.URL, testSecret)
+	if err != nil {
+		t.Fatalf("failed to create client: %v", err)
+	}
+
+	event := &api.WebhookEvent{
+		Type: "user.created",
+		Data: api.WebhookEventData{
+			"id": mustEncodeJSON("user_123"),
+		},
+	}
+
+	// Call without WithWebhookID - should fail
+	_, err = wc.SendWebhook(context.Background(), event)
+	if err == nil {
+		t.Fatal("expected error when webhook ID is missing")
+	}
+	if !errors.Is(err, client.ErrMissingWebhookID) {
+		t.Errorf("expected ErrMissingWebhookID, got: %v", err)
 	}
 }
 
@@ -228,7 +256,7 @@ func TestIntegration_DifferentEventTypes(t *testing.T) {
 
 	eventTypes := []string{"user.created", "user.updated", "user.deleted", "order.placed"}
 
-	for _, eventType := range eventTypes {
+	for i, eventType := range eventTypes {
 		t.Run(eventType, func(t *testing.T) {
 			event := &api.WebhookEvent{
 				Type: eventType,
@@ -237,7 +265,10 @@ func TestIntegration_DifferentEventTypes(t *testing.T) {
 				},
 			}
 
-			res, err := wc.SendWebhook(context.Background(), event)
+			// Each event gets a unique message ID
+			msgID := "msg_test_event_" + strconv.Itoa(i)
+			ctx := client.WithWebhookID(context.Background(), msgID)
+			res, err := wc.SendWebhook(ctx, event)
 			if err != nil {
 				t.Fatalf("failed to send webhook: %v", err)
 			}

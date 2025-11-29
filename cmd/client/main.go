@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/go-faster/jx"
+	"github.com/google/uuid"
 
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 	"github.com/naoyafurudono/hello-std-webhooks/client"
@@ -41,8 +42,13 @@ func main() {
 		},
 	}
 
-	// Send the webhook
-	ctx := context.Background()
+	// Generate a unique message ID for this event.
+	// In production, this should be derived from the event itself
+	// (e.g., "msg_" + event ID) and stored for retries.
+	msgID := "msg_" + uuid.New().String()
+
+	// Send the webhook with the message ID
+	ctx := client.WithWebhookID(context.Background(), msgID)
 	res, err := wc.SendWebhook(ctx, event)
 	if err != nil {
 		log.Fatalf("Failed to send webhook: %v", err)
