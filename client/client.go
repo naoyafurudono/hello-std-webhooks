@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -13,24 +14,53 @@ import (
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 )
 
-// WebhookClient wraps the ogen-generated WebhookClient with standard-webhooks signing.
+// Default HTTP client with reasonable timeout settings.
+var defaultHTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
+// Option is a functional option for configuring WebhookClient.
+type Option func(*WebhookClient)
+
+// WithHTTPClient sets a custom HTTP client for the WebhookClient.
+// This is useful for setting custom timeouts, transport settings, or for testing.
+func WithHTTPClient(client *http.Client) Option {
+	return func(wc *WebhookClient) {
+		wc.httpClient = client
+	}
+}
+
+// WebhookClient sends webhook events with standard-webhooks signing.
+// Note: This client does not use ogen-generated WebhookClient because
+// we need to add standard-webhooks signature headers (webhook-id, webhook-timestamp,
+// webhook-signature) to each request, which requires access to the request body
+// before signing. Using a custom HTTP client is simpler than using a RoundTripper
+// that needs to coordinate the message ID from the caller.
 type WebhookClient struct {
-	wh        *standardwebhooks.Webhook
-	targetURL string
+	wh         *standardwebhooks.Webhook
+	targetURL  string
+	httpClient *http.Client
 }
 
 // NewWebhookClient creates a new webhook client with signature signing capability.
 // The secret should be a base64-encoded secret key.
-func NewWebhookClient(targetURL string, secret string) (*WebhookClient, error) {
+func NewWebhookClient(targetURL string, secret string, opts ...Option) (*WebhookClient, error) {
 	wh, err := standardwebhooks.NewWebhook(secret)
 	if err != nil {
 		return nil, err
 	}
 
-	return &WebhookClient{
-		wh:        wh,
-		targetURL: targetURL,
-	}, nil
+	wc := &WebhookClient{
+		wh:         wh,
+		targetURL:  targetURL,
+		httpClient: defaultHTTPClient,
+	}
+
+	for _, opt := range opts {
+		opt(wc)
+	}
+
+	return wc, nil
 }
 
 // SendWebhook sends a webhook event with proper standard-webhooks headers.
@@ -64,7 +94,7 @@ func (c *WebhookClient) SendWebhook(ctx context.Context, msgID string, event *ap
 	req.Header.Set("webhook-signature", signature)
 
 	// Send the request
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -97,17 +127,18 @@ func (c *WebhookClient) SendWebhook(ctx context.Context, msgID string, event *ap
 		}
 		return &result, nil
 	default:
-		return nil, &unexpectedStatusError{StatusCode: resp.StatusCode, Body: respBody}
+		return nil, &UnexpectedStatusError{StatusCode: resp.StatusCode, Body: respBody}
 	}
 }
 
-type unexpectedStatusError struct {
+// UnexpectedStatusError is returned when the server returns an unexpected HTTP status code.
+type UnexpectedStatusError struct {
 	StatusCode int
 	Body       []byte
 }
 
-func (e *unexpectedStatusError) Error() string {
-	return "unexpected status code: " + strconv.Itoa(e.StatusCode)
+func (e *UnexpectedStatusError) Error() string {
+	return fmt.Sprintf("unexpected status code: %d", e.StatusCode)
 }
 
 // formatTimestamp formats the timestamp as a Unix timestamp string.
