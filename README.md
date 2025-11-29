@@ -1,10 +1,16 @@
 # hello-std-webhooks
 
-A demo project for [standard-webhooks](https://www.standardwebhooks.com/) signature verification, featuring a Go webhook client and a Next.js webhook server.
+A demo project for [Standard Webhooks](https://www.standardwebhooks.com/), featuring a Go webhook client and a Next.js webhook server.
 
 ## Overview
 
-This project demonstrates how to implement webhooks with cryptographic signature verification using the standard-webhooks specification:
+Webhooks are HTTP callbacks that enable event-driven communication between services. This project demonstrates how to send and verify webhooks securely using the Standard Webhooks specification.
+
+Standard Webhooks provides protection against:
+- **Spoofing** - Signature verification ensures the webhook came from a trusted source
+- **Replay attacks** - Timestamp validation prevents reuse of captured requests
+
+This project includes:
 
 - **Go Client** (`cmd/client`): Sends signed webhook requests
 - **Next.js Server** (`web/`): Receives and verifies webhook signatures
@@ -65,9 +71,9 @@ Then open http://localhost:3000 to view the API documentation and received event
 | `make test` | Run Go tests |
 | `make clean` | Remove build artifacts |
 
-## Standard Webhooks Signature
+## Standard Webhooks Specification
 
-This project uses the [standard-webhooks](https://github.com/standard-webhooks/standard-webhooks) specification for signature verification.
+This project follows the [Standard Webhooks](https://github.com/standard-webhooks/standard-webhooks) specification for signing and verifying webhooks.
 
 ### Required Headers
 
@@ -99,7 +105,7 @@ The signature header format is `v1,<signature>`.
 
 | Variable | Description |
 |----------|-------------|
-| `WEBHOOK_SECRET` | Shared secret for signature verification |
+| `WEBHOOK_SECRET` | Shared secret for verifying webhook signatures |
 
 ## Deployment
 
