@@ -6,7 +6,10 @@ export interface WebhookHeaders {
 
 export interface WebhookEvent {
   headers: WebhookHeaders;
-  payload: Record<string, unknown>;
+  payload: Record<string, unknown> | null;
+  rawBody: string;
+  verified: boolean;
+  error?: string;
   receivedAt: string;
 }
 

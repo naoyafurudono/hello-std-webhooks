@@ -10,7 +10,10 @@ interface WebhookHeaders {
 
 interface WebhookEvent {
   headers: WebhookHeaders;
-  payload: Record<string, unknown>;
+  payload: Record<string, unknown> | null;
+  rawBody: string;
+  verified: boolean;
+  error?: string;
   receivedAt: string;
 }
 
@@ -86,12 +89,28 @@ export default function EventsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {events.map((event) => (
+            {events.map((event, index) => (
               <div
-                key={`${event.headers.id}-${event.receivedAt}`}
-                className="bg-white rounded-lg shadow p-4"
+                key={`${event.headers.id}-${event.receivedAt}-${index}`}
+                className={`bg-white rounded-lg shadow p-4 border-l-4 ${
+                  event.verified ? "border-green-500" : "border-red-500"
+                }`}
               >
                 <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded ${
+                        event.verified
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {event.verified ? "Verified" : "Failed"}
+                    </span>
+                    {event.error && (
+                      <span className="text-xs text-red-600">{event.error}</span>
+                    )}
+                  </div>
                   <span className="text-sm text-gray-500">
                     {new Date(event.receivedAt).toLocaleString()}
                   </span>
@@ -100,16 +119,20 @@ export default function EventsPage() {
                 <div className="mb-3">
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">Headers</h3>
                   <div className="bg-gray-50 p-3 rounded text-sm font-mono space-y-1">
-                    <div><span className="text-gray-500">webhook-id:</span> {event.headers.id}</div>
-                    <div><span className="text-gray-500">webhook-timestamp:</span> {event.headers.timestamp}</div>
-                    <div className="break-all"><span className="text-gray-500">webhook-signature:</span> {event.headers.signature}</div>
+                    <div><span className="text-gray-500">webhook-id:</span> {event.headers.id || "(empty)"}</div>
+                    <div><span className="text-gray-500">webhook-timestamp:</span> {event.headers.timestamp || "(empty)"}</div>
+                    <div className="break-all"><span className="text-gray-500">webhook-signature:</span> {event.headers.signature || "(empty)"}</div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Payload</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    {event.payload ? "Payload" : "Raw Body"}
+                  </h3>
                   <pre className="bg-gray-50 p-3 rounded text-sm overflow-x-auto">
-                    {JSON.stringify(event.payload, null, 2)}
+                    {event.payload
+                      ? JSON.stringify(event.payload, null, 2)
+                      : event.rawBody}
                   </pre>
                 </div>
               </div>

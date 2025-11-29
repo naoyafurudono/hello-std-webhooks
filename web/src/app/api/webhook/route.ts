@@ -18,33 +18,57 @@ export async function POST(request: NextRequest) {
 
   // Get webhook headers
   const headers = {
-    "webhook-id": request.headers.get("webhook-id") || "",
-    "webhook-timestamp": request.headers.get("webhook-timestamp") || "",
-    "webhook-signature": request.headers.get("webhook-signature") || "",
+    id: request.headers.get("webhook-id") || "",
+    timestamp: request.headers.get("webhook-timestamp") || "",
+    signature: request.headers.get("webhook-signature") || "",
+  };
+
+  const stdHeaders = {
+    "webhook-id": headers.id,
+    "webhook-timestamp": headers.timestamp,
+    "webhook-signature": headers.signature,
   };
 
   try {
     // Verify the webhook signature and parse as JSON
-    const payload = wh.verify(body, headers) as Record<string, unknown>;
+    const payload = wh.verify(body, stdHeaders) as Record<string, unknown>;
 
-    // Store the event with headers
+    // Store the verified event
     const event = addEvent({
-      headers: {
-        id: headers["webhook-id"],
-        timestamp: headers["webhook-timestamp"],
-        signature: headers["webhook-signature"],
-      },
+      headers,
       payload,
+      rawBody: body,
+      verified: true,
     });
 
-    console.log(`Received webhook: id=${event.headers.id}, payload=${JSON.stringify(payload)}`);
+    console.log(`Received webhook (verified): id=${event.headers.id}`);
 
     return NextResponse.json({
       success: true,
-      message: "Webhook received successfully",
+      message: "Webhook received and verified successfully",
     });
-  } catch (error) {
-    console.error("Webhook verification failed:", error);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+
+    // Try to parse body as JSON for display
+    let payload: Record<string, unknown> | null = null;
+    try {
+      payload = JSON.parse(body);
+    } catch {
+      // Body is not valid JSON
+    }
+
+    // Store the failed event
+    const event = addEvent({
+      headers,
+      payload,
+      rawBody: body,
+      verified: false,
+      error: errorMessage,
+    });
+
+    console.error(`Webhook verification failed: id=${event.headers.id}, error=${errorMessage}`);
+
     return NextResponse.json(
       { error: "Invalid webhook signature" },
       { status: 401 }
