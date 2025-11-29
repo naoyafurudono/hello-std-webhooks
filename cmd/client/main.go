@@ -48,8 +48,7 @@ func main() {
 	msgID := "msg_" + uuid.New().String()
 
 	// Send the webhook with the message ID
-	ctx := client.WithWebhookID(context.Background(), msgID)
-	res, err := wc.SendWebhook(ctx, event)
+	res, err := wc.SendWebhook(context.Background(), msgID, event)
 	if err != nil {
 		log.Fatalf("Failed to send webhook: %v", err)
 	}
