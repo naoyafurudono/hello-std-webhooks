@@ -2,6 +2,8 @@ module github.com/naoyafurudono/hello-std-webhooks
 
 go 1.24.3
 
+tool github.com/ogen-go/ogen/cmd/ogen
+
 require (
 	github.com/go-faster/errors v0.7.1
 	github.com/go-faster/jx v1.2.0
