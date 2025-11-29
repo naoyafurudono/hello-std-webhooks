@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { addEvent } from "@/lib/event-store";
 
-const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw";
+function getWebhookSecret(): string {
+  const secret = process.env.WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error("WEBHOOK_SECRET is not set. Run 'make setup-env' to generate env.local files.");
+  }
+  return secret;
+}
 
 export async function POST(request: NextRequest) {
-  const wh = new Webhook(WEBHOOK_SECRET);
+  const wh = new Webhook(getWebhookSecret());
 
   // Get raw body as text for signature verification
   const body = await request.text();

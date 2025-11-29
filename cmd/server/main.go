@@ -5,17 +5,20 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"github.com/naoyafurudono/hello-std-webhooks/api"
 	"github.com/naoyafurudono/hello-std-webhooks/server"
 )
 
 func main() {
+	// Load env.local if it exists (ignore error if not found)
+	_ = godotenv.Load("env.local")
+
 	// Get the webhook secret from environment variable
 	secret := os.Getenv("WEBHOOK_SECRET")
 	if secret == "" {
-		// Default secret for development (base64 encoded)
-		// In production, always use a secure secret from environment
-		secret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+		log.Fatal("WEBHOOK_SECRET is not set. Run 'make setup-env' to generate env.local files.")
 	}
 
 	addr := os.Getenv("SERVER_ADDR")
