@@ -24,21 +24,20 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    // Verify the webhook signature
-    const payload = wh.verify(body, headers) as { type: string; data: Record<string, unknown> };
+    // Verify the webhook signature and parse as JSON
+    const payload = wh.verify(body, headers) as Record<string, unknown>;
 
-    // Store the event
+    // Store the entire payload
     const event = addEvent({
       id: headers["webhook-id"],
-      type: payload.type,
-      data: payload.data,
+      payload,
     });
 
-    console.log(`Received webhook event: type=${event.type}, id=${event.id}`);
+    console.log(`Received webhook: id=${event.id}, payload=${JSON.stringify(payload)}`);
 
     return NextResponse.json({
       success: true,
-      message: `Webhook event '${event.type}' processed successfully`,
+      message: "Webhook received successfully",
     });
   } catch (error) {
     console.error("Webhook verification failed:", error);

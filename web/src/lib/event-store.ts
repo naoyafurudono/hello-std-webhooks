@@ -1,7 +1,6 @@
 export interface WebhookEvent {
   id: string;
-  type: string;
-  data: Record<string, unknown>;
+  payload: Record<string, unknown>;
   receivedAt: string;
 }
 

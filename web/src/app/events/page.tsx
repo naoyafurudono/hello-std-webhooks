@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 
 interface WebhookEvent {
   id: string;
-  type: string;
-  data: Record<string, unknown>;
+  payload: Record<string, unknown>;
   receivedAt: string;
 }
 
@@ -87,16 +86,15 @@ export default function EventsPage() {
                 className="bg-white rounded-lg shadow p-4"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <span className="inline-block px-2 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded">
-                    {event.type}
+                  <span className="text-sm font-mono text-gray-600">
+                    {event.id}
                   </span>
                   <span className="text-sm text-gray-500">
                     {new Date(event.receivedAt).toLocaleString()}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 mb-2">ID: {event.id}</p>
                 <pre className="bg-gray-50 p-3 rounded text-sm overflow-x-auto">
-                  {JSON.stringify(event.data, null, 2)}
+                  {JSON.stringify(event.payload, null, 2)}
                 </pre>
               </div>
             ))}
