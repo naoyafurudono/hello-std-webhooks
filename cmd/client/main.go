@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
@@ -13,18 +16,11 @@ import (
 )
 
 func main() {
-	// Get the webhook secret from environment variable
-	secret := os.Getenv("WEBHOOK_SECRET")
-	if secret == "" {
-		// Default secret for development (base64 encoded)
-		// In production, always use a secure secret from environment
-		secret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
-	}
+	var targetName string
+	flag.StringVar(&targetName, "target", "", "target name (e.g., GO, NEXTJS) - reads WEBHOOK_TARGET_<NAME>_URL and WEBHOOK_TARGET_<NAME>_SECRET")
+	flag.Parse()
 
-	targetURL := os.Getenv("WEBHOOK_TARGET_URL")
-	if targetURL == "" {
-		targetURL = "http://localhost:8080/webhook"
-	}
+	targetURL, secret := getTargetConfig(targetName)
 
 	// Create the webhook client
 	wc, err := client.NewWebhookClient(targetURL, secret)
@@ -48,6 +44,7 @@ func main() {
 	msgID := "msg_" + uuid.New().String()
 
 	// Send the webhook with the message ID
+	log.Printf("Sending webhook to %s", targetURL)
 	res, err := wc.SendWebhook(context.Background(), msgID, event)
 	if err != nil {
 		log.Fatalf("Failed to send webhook: %v", err)
@@ -64,6 +61,37 @@ func main() {
 	default:
 		log.Printf("Unknown response type: %T", r)
 	}
+}
+
+func getTargetConfig(targetName string) (url, secret string) {
+	if targetName != "" {
+		// Use named target: WEBHOOK_TARGET_<NAME>_URL and WEBHOOK_TARGET_<NAME>_SECRET
+		name := strings.ToUpper(targetName)
+		url = os.Getenv(fmt.Sprintf("WEBHOOK_TARGET_%s_URL", name))
+		secret = os.Getenv(fmt.Sprintf("WEBHOOK_TARGET_%s_SECRET", name))
+
+		if url == "" {
+			log.Fatalf("WEBHOOK_TARGET_%s_URL is not set", name)
+		}
+		if secret == "" {
+			log.Fatalf("WEBHOOK_TARGET_%s_SECRET is not set", name)
+		}
+		return url, secret
+	}
+
+	// Fallback to legacy env vars for backwards compatibility
+	url = os.Getenv("WEBHOOK_TARGET_URL")
+	if url == "" {
+		url = "http://localhost:8080/webhook"
+	}
+
+	secret = os.Getenv("WEBHOOK_SECRET")
+	if secret == "" {
+		// Default secret for development
+		secret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+	}
+
+	return url, secret
 }
 
 func mustEncodeJSON(v string) jx.Raw {
