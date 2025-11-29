@@ -24,12 +24,13 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
 	handler := server.NewWebhookHandler()
-	srv, err := api.NewServer(handler)
+	srv, err := api.NewWebhookServer(handler)
 	if err != nil {
 		t.Fatalf("failed to create server: %v", err)
 	}
 
-	middleware, err := server.NewWebhookVerificationMiddleware(testSecret, srv)
+	webhookHandler := srv.Handler("userEvent")
+	middleware, err := server.NewWebhookVerificationMiddleware(testSecret, webhookHandler)
 	if err != nil {
 		t.Fatalf("failed to create middleware: %v", err)
 	}
@@ -54,7 +55,7 @@ func TestIntegration_ValidSignature(t *testing.T) {
 		},
 	}
 
-	res, err := wc.SendWebhook(context.Background(), event)
+	res, err := wc.SendWebhook(context.Background(), "msg_test_valid_signature", event)
 	if err != nil {
 		t.Fatalf("failed to send webhook: %v", err)
 	}
@@ -92,7 +93,7 @@ func TestIntegration_InvalidSignature(t *testing.T) {
 		t.Fatalf("failed to sign: %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, ts.URL+"/webhook", bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, ts.URL, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -117,7 +118,7 @@ func TestIntegration_MissingHeaders(t *testing.T) {
 	defer ts.Close()
 
 	payload := []byte(`{"type":"user.created","data":{"id":"123"}}`)
-	req, err := http.NewRequest(http.MethodPost, ts.URL+"/webhook", bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, ts.URL, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -154,7 +155,7 @@ func TestIntegration_ExpiredTimestamp(t *testing.T) {
 		t.Fatalf("failed to sign: %v", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, ts.URL+"/webhook", bytes.NewReader(payload))
+	req, err := http.NewRequest(http.MethodPost, ts.URL, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -196,7 +197,7 @@ func TestIntegration_TamperedPayload(t *testing.T) {
 	}
 
 	// Send tampered payload with original signature
-	req, err := http.NewRequest(http.MethodPost, ts.URL+"/webhook", bytes.NewReader(tamperedPayload))
+	req, err := http.NewRequest(http.MethodPost, ts.URL, bytes.NewReader(tamperedPayload))
 	if err != nil {
 		t.Fatalf("failed to create request: %v", err)
 	}
@@ -227,7 +228,7 @@ func TestIntegration_DifferentEventTypes(t *testing.T) {
 
 	eventTypes := []string{"user.created", "user.updated", "user.deleted", "order.placed"}
 
-	for _, eventType := range eventTypes {
+	for i, eventType := range eventTypes {
 		t.Run(eventType, func(t *testing.T) {
 			event := &api.WebhookEvent{
 				Type: eventType,
@@ -236,7 +237,9 @@ func TestIntegration_DifferentEventTypes(t *testing.T) {
 				},
 			}
 
-			res, err := wc.SendWebhook(context.Background(), event)
+			// Each event gets a unique message ID
+			msgID := "msg_test_event_" + strconv.Itoa(i)
+			res, err := wc.SendWebhook(context.Background(), msgID, event)
 			if err != nil {
 				t.Fatalf("failed to send webhook: %v", err)
 			}

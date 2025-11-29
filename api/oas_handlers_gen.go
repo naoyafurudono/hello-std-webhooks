@@ -33,22 +33,19 @@ func (c *codeRecorder) Unwrap() http.ResponseWriter {
 	return c.ResponseWriter
 }
 
-// handleReceiveWebhookRequest handles receiveWebhook operation.
+// handleUserEventRequest handles userEvent operation.
 //
-// Endpoint to receive webhook events with standard-webhooks signature verification.
-//
-// POST /webhook
-func (s *Server) handleReceiveWebhookRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// Webhook sent when a user event occurs (created, updated, deleted).
+func (s *WebhookServer) handleUserEventRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("receiveWebhook"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.HTTPRouteKey.String("/webhook"),
+		otelogen.OperationID("userEvent"),
+		otelogen.WebhookName("userEvent"),
 	}
 
 	// Start a span for this request.
-	ctx, span := s.cfg.Tracer.Start(r.Context(), ReceiveWebhookOperation,
+	ctx, span := s.cfg.Tracer.Start(r.Context(), UserEventOperation,
 		trace.WithAttributes(otelAttrs...),
 		serverSpanKind,
 	)
@@ -103,13 +100,13 @@ func (s *Server) handleReceiveWebhookRequest(args [0]string, argsEscaped bool, w
 		}
 		err          error
 		opErrContext = ogenerrors.OperationContext{
-			Name: ReceiveWebhookOperation,
-			ID:   "receiveWebhook",
+			Name: UserEventOperation,
+			ID:   "userEvent",
 		}
 	)
 
 	var rawBody []byte
-	request, rawBody, close, err := s.decodeReceiveWebhookRequest(r)
+	request, rawBody, close, err := s.decodeUserEventRequest(r)
 	if err != nil {
 		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
@@ -125,13 +122,13 @@ func (s *Server) handleReceiveWebhookRequest(args [0]string, argsEscaped bool, w
 		}
 	}()
 
-	var response ReceiveWebhookRes
+	var response UserEventRes
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
-			OperationName:    ReceiveWebhookOperation,
-			OperationSummary: "Receive a webhook event",
-			OperationID:      "receiveWebhook",
+			OperationName:    UserEventOperation,
+			OperationSummary: "User event webhook",
+			OperationID:      "userEvent",
 			Body:             request,
 			RawBody:          rawBody,
 			Params:           middleware.Parameters{},
@@ -141,7 +138,7 @@ func (s *Server) handleReceiveWebhookRequest(args [0]string, argsEscaped bool, w
 		type (
 			Request  = *WebhookEvent
 			Params   = struct{}
-			Response = ReceiveWebhookRes
+			Response = UserEventRes
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -152,12 +149,12 @@ func (s *Server) handleReceiveWebhookRequest(args [0]string, argsEscaped bool, w
 			mreq,
 			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.ReceiveWebhook(ctx, request)
+				response, err = s.h.UserEvent(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.ReceiveWebhook(ctx, request)
+		response, err = s.h.UserEvent(ctx, request)
 	}
 	if err != nil {
 		defer recordError("Internal", err)
@@ -165,7 +162,7 @@ func (s *Server) handleReceiveWebhookRequest(args [0]string, argsEscaped bool, w
 		return
 	}
 
-	if err := encodeReceiveWebhookResponse(response, w, span); err != nil {
+	if err := encodeUserEventResponse(response, w, span); err != nil {
 		defer recordError("EncodeResponse", err)
 		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
 			s.cfg.ErrorHandler(ctx, w, r, err)

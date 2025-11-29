@@ -6,5 +6,5 @@ package api
 type OperationName = string
 
 const (
-	ReceiveWebhookOperation OperationName = "ReceiveWebhook"
+	UserEventOperation OperationName = "UserEvent"
 )

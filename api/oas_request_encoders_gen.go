@@ -10,7 +10,7 @@ import (
 	ht "github.com/ogen-go/ogen/http"
 )
 
-func encodeReceiveWebhookRequest(
+func encodeUserEventRequest(
 	req *WebhookEvent,
 	r *http.Request,
 ) error {

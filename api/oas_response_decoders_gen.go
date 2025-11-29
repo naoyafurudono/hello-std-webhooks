@@ -13,7 +13,7 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func decodeReceiveWebhookResponse(resp *http.Response) (res ReceiveWebhookRes, _ error) {
+func decodeUserEventResponse(resp *http.Response) (res UserEventRes, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -64,7 +64,7 @@ func decodeReceiveWebhookResponse(resp *http.Response) (res ReceiveWebhookRes, _
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response ReceiveWebhookBadRequest
+			var response UserEventBadRequest
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -99,7 +99,7 @@ func decodeReceiveWebhookResponse(resp *http.Response) (res ReceiveWebhookRes, _
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response ReceiveWebhookUnauthorized
+			var response UserEventUnauthorized
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
