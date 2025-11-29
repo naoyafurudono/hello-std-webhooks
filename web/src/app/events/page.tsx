@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface WebhookHeaders {
@@ -63,7 +64,9 @@ export default function EventsPage() {
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Webhook Events</h1>
+          <Link href="/" className="text-2xl font-bold text-gray-900 hover:text-blue-600">
+            Webhook Events
+          </Link>
           <div className="space-x-2">
             <button
               onClick={fetchEvents}
