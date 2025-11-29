@@ -2,11 +2,8 @@ package main
 
 import (
 	"context"
-	"flag"
-	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
@@ -20,11 +17,15 @@ func main() {
 	// Load env.local if it exists (ignore error if not found)
 	_ = godotenv.Load("env.local")
 
-	var targetName string
-	flag.StringVar(&targetName, "target", "", "target name (e.g., GO, NEXTJS) - reads WEBHOOK_TARGET_<NAME>_URL and WEBHOOK_TARGET_<NAME>_SECRET")
-	flag.Parse()
+	targetURL := os.Getenv("WEBHOOK_TARGET_URL")
+	if targetURL == "" {
+		log.Fatal("WEBHOOK_TARGET_URL is not set. Run 'make setup-env' first.")
+	}
 
-	targetURL, secret := getTargetConfig(targetName)
+	secret := os.Getenv("WEBHOOK_SECRET")
+	if secret == "" {
+		log.Fatal("WEBHOOK_SECRET is not set. Run 'make setup-env' first.")
+	}
 
 	// Create the webhook client
 	wc, err := client.NewWebhookClient(targetURL, secret)
@@ -65,27 +66,6 @@ func main() {
 	default:
 		log.Printf("Unknown response type: %T", r)
 	}
-}
-
-func getTargetConfig(targetName string) (url, secret string) {
-	if targetName != "" {
-		// Use named target: WEBHOOK_TARGET_<NAME>_URL and WEBHOOK_TARGET_<NAME>_SECRET
-		name := strings.ToUpper(targetName)
-		url = os.Getenv(fmt.Sprintf("WEBHOOK_TARGET_%s_URL", name))
-		secret = os.Getenv(fmt.Sprintf("WEBHOOK_TARGET_%s_SECRET", name))
-
-		if url == "" {
-			log.Fatalf("WEBHOOK_TARGET_%s_URL is not set", name)
-		}
-		if secret == "" {
-			log.Fatalf("WEBHOOK_TARGET_%s_SECRET is not set", name)
-		}
-		return url, secret
-	}
-
-	// No target specified - require explicit target name
-	log.Fatal("target is required. Use -target=go or -target=nextjs. Run 'make setup-env' first.")
-	return "", "" // unreachable
 }
 
 func mustEncodeJSON(v string) jx.Raw {
